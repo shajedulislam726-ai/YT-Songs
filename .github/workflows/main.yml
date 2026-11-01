@@ -1,1 +1,35 @@
-
+name: Build YT Songs
+on:
+  workflow_dispatch:
+    inputs:
+      apktool_version:
+        description: "Apktool version"
+        default: "2.9.3"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: pip install pillow
+      - name: Get APK from release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p input
+          gh release download apk --pattern 'ytmusic.apk' --dir input
+      - name: Get apktool
+        run: |
+          V="${{ inputs.apktool_version }}"
+          curl -fL -o apktool.jar "https://github.com/iBotPeaches/Apktool/releases/download/v${V}/apktool_${V}.jar"
+      - name: Build
+        run: bash build.sh input/ytmusic.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YT-Songs
+          path: out/YT-Songs.apk
